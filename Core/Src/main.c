@@ -65,7 +65,7 @@ uint32_t timerCapturedCounter;
 uint16_t dimmerValue[10];
 
 uint8_t error;
-uint8_t temp_trashhold = 40;
+uint8_t temperatureThreshold = 40;
 
 /* USER CODE END PV */
 
@@ -187,7 +187,7 @@ void setOuptutValue(uint8_t pin, uint8_t value) {
 	} else if (pin == 27) {
 		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, value == 1 ? GPIO_PIN_RESET : GPIO_PIN_SET);
 	} else if (pin == 28) {
-		temp_trashhold = value;
+		temperatureThreshold = value;
 	}
 	error = 0;
 
@@ -297,7 +297,7 @@ int main(void)
 			i2cState = 0;
 			if (isAnalogPin(rxData[0])) {
 				txData[0] = readAnalogValue(rxData[0]);
-				if (txData[0] > temp_trashhold) {
+				if (txData[0] > temperatureThreshold) {
 					error = 1;
 				}
 				#if DEBUG

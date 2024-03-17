@@ -41,11 +41,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  18 .debug_line   00019f66  00000000  00000000  00054d15  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    00096421  00000000  00000000  0006ec7b  2**0
+ 19 .debug_str    0009646e  00000000  00000000  0006ec7b  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_frame  00005be8  00000000  00000000  0010509c  2**2
+ 20 .debug_frame  00005be8  00000000  00000000  001050ec  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000006d  00000000  00000000  0010ac84  2**0
+ 21 .debug_line_str 0000006d  00000000  00000000  0010acd4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1155,11 +1155,18 @@ Disassembly of section .text:
  8000d10:	40010c00 	.word	0x40010c00
 
 08000d14 <isOutputPin>:
+#endif /* __GNUC__ */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+uint8_t isOutputPin(uint8_t pin) {
  8000d14:	b480      	push	{r7}
  8000d16:	b083      	sub	sp, #12
  8000d18:	af00      	add	r7, sp, #0
  8000d1a:	4603      	mov	r3, r0
  8000d1c:	71fb      	strb	r3, [r7, #7]
+	return (pin >= 1 && pin <= 10) || pin == 27 || pin == 28;
  8000d1e:	79fb      	ldrb	r3, [r7, #7]
  8000d20:	2b00      	cmp	r3, #0
  8000d22:	d002      	beq.n	8000d2a <isOutputPin+0x16>
@@ -1176,6 +1183,7 @@ Disassembly of section .text:
  8000d38:	e000      	b.n	8000d3c <isOutputPin+0x28>
  8000d3a:	2300      	movs	r3, #0
  8000d3c:	b2db      	uxtb	r3, r3
+}
  8000d3e:	4618      	mov	r0, r3
  8000d40:	370c      	adds	r7, #12
  8000d42:	46bd      	mov	sp, r7
@@ -1183,11 +1191,14 @@ Disassembly of section .text:
  8000d46:	4770      	bx	lr
 
 08000d48 <isAnalogPin>:
+
+uint8_t isAnalogPin(uint8_t pin) {
  8000d48:	b480      	push	{r7}
  8000d4a:	b083      	sub	sp, #12
  8000d4c:	af00      	add	r7, sp, #0
  8000d4e:	4603      	mov	r3, r0
  8000d50:	71fb      	strb	r3, [r7, #7]
+	return pin == 0 || pin == 26;
  8000d52:	79fb      	ldrb	r3, [r7, #7]
  8000d54:	2b00      	cmp	r3, #0
  8000d56:	d002      	beq.n	8000d5e <isAnalogPin+0x16>
@@ -1198,6 +1209,7 @@ Disassembly of section .text:
  8000d60:	e000      	b.n	8000d64 <isAnalogPin+0x1c>
  8000d62:	2300      	movs	r3, #0
  8000d64:	b2db      	uxtb	r3, r3
+}
  8000d66:	4618      	mov	r0, r3
  8000d68:	370c      	adds	r7, #12
  8000d6a:	46bd      	mov	sp, r7
@@ -1205,11 +1217,14 @@ Disassembly of section .text:
  8000d6e:	4770      	bx	lr
 
 08000d70 <isInputPin>:
+
+uint8_t isInputPin(uint8_t pin) {
  8000d70:	b480      	push	{r7}
  8000d72:	b083      	sub	sp, #12
  8000d74:	af00      	add	r7, sp, #0
  8000d76:	4603      	mov	r3, r0
  8000d78:	71fb      	strb	r3, [r7, #7]
+	return pin >= 11 && pin <= 25;
  8000d7a:	79fb      	ldrb	r3, [r7, #7]
  8000d7c:	2b0a      	cmp	r3, #10
  8000d7e:	d904      	bls.n	8000d8a <isInputPin+0x1a>
@@ -1220,6 +1235,7 @@ Disassembly of section .text:
  8000d88:	e000      	b.n	8000d8c <isInputPin+0x1c>
  8000d8a:	2300      	movs	r3, #0
  8000d8c:	b2db      	uxtb	r3, r3
+}
  8000d8e:	4618      	mov	r0, r3
  8000d90:	370c      	adds	r7, #12
  8000d92:	46bd      	mov	sp, r7
@@ -1227,10 +1243,17 @@ Disassembly of section .text:
  8000d96:	4770      	bx	lr
 
 08000d98 <getTemp>:
+
+#define V25 1.57 // from datasheet fo CH32. for STM32 it is 1.43
+#define VSENSE 3.3/4096 // VSENSE value 0.0008056640625
+#define Avg_Slope 0.0043 // 4.3mV from datasheet
+
+int getTemp(uint32_t variable) {
  8000d98:	b580      	push	{r7, lr}
  8000d9a:	b082      	sub	sp, #8
  8000d9c:	af00      	add	r7, sp, #0
  8000d9e:	6078      	str	r0, [r7, #4]
+	return (int)(((V25 - (VSENSE * variable)) / Avg_Slope) + 25); // formula from datasheet
  8000da0:	6878      	ldr	r0, [r7, #4]
  8000da2:	f7ff fb17 	bl	80003d4 <__aeabi_ui2d>
  8000da6:	a314      	add	r3, pc, #80	; (adr r3, 8000df8 <getTemp+0x60>)
@@ -1261,6 +1284,7 @@ Disassembly of section .text:
  8000de8:	4619      	mov	r1, r3
  8000dea:	f7ff fd7f 	bl	80008ec <__aeabi_d2iz>
  8000dee:	4603      	mov	r3, r0
+}
  8000df0:	4618      	mov	r0, r3
  8000df2:	3708      	adds	r7, #8
  8000df4:	46bd      	mov	sp, r7
@@ -1275,10 +1299,13 @@ Disassembly of section .text:
  8000e14:	00000000 	.word	0x00000000
 
 08000e18 <getVoltage>:
+
+int getVoltage(uint32_t variable) {
  8000e18:	b580      	push	{r7, lr}
  8000e1a:	b082      	sub	sp, #8
  8000e1c:	af00      	add	r7, sp, #0
  8000e1e:	6078      	str	r0, [r7, #4]
+	return (int)(VSENSE * variable); // formula from datasheet
  8000e20:	6878      	ldr	r0, [r7, #4]
  8000e22:	f7ff fad7 	bl	80003d4 <__aeabi_ui2d>
  8000e26:	a308      	add	r3, pc, #32	; (adr r3, 8000e48 <getVoltage+0x30>)
@@ -1290,6 +1317,7 @@ Disassembly of section .text:
  8000e36:	4619      	mov	r1, r3
  8000e38:	f7ff fd58 	bl	80008ec <__aeabi_d2iz>
  8000e3c:	4603      	mov	r3, r0
+}
  8000e3e:	4618      	mov	r0, r3
  8000e40:	3708      	adds	r7, #8
  8000e42:	46bd      	mov	sp, r7
@@ -1299,14 +1327,18 @@ Disassembly of section .text:
  8000e4c:	3f4a6666 	.word	0x3f4a6666
 
 08000e50 <readAnalogValue>:
+
+uint8_t readAnalogValue(uint8_t pin) {
  8000e50:	b580      	push	{r7, lr}
  8000e52:	b082      	sub	sp, #8
  8000e54:	af00      	add	r7, sp, #0
  8000e56:	4603      	mov	r3, r0
  8000e58:	71fb      	strb	r3, [r7, #7]
+	if (pin == 0) {
  8000e5a:	79fb      	ldrb	r3, [r7, #7]
  8000e5c:	2b00      	cmp	r3, #0
  8000e5e:	d107      	bne.n	8000e70 <readAnalogValue+0x20>
+		return (uint8_t)getTemp(adcTempValue);
  8000e60:	4b0b      	ldr	r3, [pc, #44]	; (8000e90 <readAnalogValue+0x40>)
  8000e62:	681b      	ldr	r3, [r3, #0]
  8000e64:	4618      	mov	r0, r3
@@ -1314,9 +1346,12 @@ Disassembly of section .text:
  8000e6a:	4603      	mov	r3, r0
  8000e6c:	b2db      	uxtb	r3, r3
  8000e6e:	e00a      	b.n	8000e86 <readAnalogValue+0x36>
+	}
+	if (pin == 26) {
  8000e70:	79fb      	ldrb	r3, [r7, #7]
  8000e72:	2b1a      	cmp	r3, #26
  8000e74:	d107      	bne.n	8000e86 <readAnalogValue+0x36>
+		return (uint8_t)getVoltage(adcVRefValue);
  8000e76:	4b07      	ldr	r3, [pc, #28]	; (8000e94 <readAnalogValue+0x44>)
  8000e78:	681b      	ldr	r3, [r3, #0]
  8000e7a:	4618      	mov	r0, r3
@@ -1324,6 +1359,8 @@ Disassembly of section .text:
  8000e80:	4603      	mov	r3, r0
  8000e82:	b2db      	uxtb	r3, r3
  8000e84:	e7ff      	b.n	8000e86 <readAnalogValue+0x36>
+	}
+}
  8000e86:	4618      	mov	r0, r3
  8000e88:	3708      	adds	r7, #8
  8000e8a:	46bd      	mov	sp, r7
@@ -1333,131 +1370,165 @@ Disassembly of section .text:
  8000e94:	20000168 	.word	0x20000168
 
 08000e98 <readInputValue>:
+
+uint8_t readInputValue(uint8_t pin) {
  8000e98:	b580      	push	{r7, lr}
  8000e9a:	b082      	sub	sp, #8
  8000e9c:	af00      	add	r7, sp, #0
  8000e9e:	4603      	mov	r3, r0
  8000ea0:	71fb      	strb	r3, [r7, #7]
+	if (pin == 11) {
  8000ea2:	79fb      	ldrb	r3, [r7, #7]
  8000ea4:	2b0b      	cmp	r3, #11
  8000ea6:	d106      	bne.n	8000eb6 <readInputValue+0x1e>
+		return HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN11_Pin);
  8000ea8:	f44f 4100 	mov.w	r1, #32768	; 0x8000
  8000eac:	4847      	ldr	r0, [pc, #284]	; (8000fcc <readInputValue+0x134>)
  8000eae:	f002 fab5 	bl	800341c <HAL_GPIO_ReadPin>
  8000eb2:	4603      	mov	r3, r0
  8000eb4:	e086      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 12) {
  8000eb6:	79fb      	ldrb	r3, [r7, #7]
  8000eb8:	2b0c      	cmp	r3, #12
  8000eba:	d106      	bne.n	8000eca <readInputValue+0x32>
+		return HAL_GPIO_ReadPin(PIN12_GPIO_Port, PIN12_Pin);
  8000ebc:	f44f 5180 	mov.w	r1, #4096	; 0x1000
  8000ec0:	4843      	ldr	r0, [pc, #268]	; (8000fd0 <readInputValue+0x138>)
  8000ec2:	f002 faab 	bl	800341c <HAL_GPIO_ReadPin>
  8000ec6:	4603      	mov	r3, r0
  8000ec8:	e07c      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 13) {
  8000eca:	79fb      	ldrb	r3, [r7, #7]
  8000ecc:	2b0d      	cmp	r3, #13
  8000ece:	d106      	bne.n	8000ede <readInputValue+0x46>
+		return HAL_GPIO_ReadPin(PIN13_GPIO_Port, PIN13_Pin);
  8000ed0:	f44f 4100 	mov.w	r1, #32768	; 0x8000
  8000ed4:	483e      	ldr	r0, [pc, #248]	; (8000fd0 <readInputValue+0x138>)
  8000ed6:	f002 faa1 	bl	800341c <HAL_GPIO_ReadPin>
  8000eda:	4603      	mov	r3, r0
  8000edc:	e072      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 14) {
  8000ede:	79fb      	ldrb	r3, [r7, #7]
  8000ee0:	2b0e      	cmp	r3, #14
  8000ee2:	d105      	bne.n	8000ef0 <readInputValue+0x58>
+		return HAL_GPIO_ReadPin(PIN14_GPIO_Port, PIN14_Pin);
  8000ee4:	2120      	movs	r1, #32
  8000ee6:	4839      	ldr	r0, [pc, #228]	; (8000fcc <readInputValue+0x134>)
  8000ee8:	f002 fa98 	bl	800341c <HAL_GPIO_ReadPin>
  8000eec:	4603      	mov	r3, r0
  8000eee:	e069      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 15) {
  8000ef0:	79fb      	ldrb	r3, [r7, #7]
  8000ef2:	2b0f      	cmp	r3, #15
  8000ef4:	d105      	bne.n	8000f02 <readInputValue+0x6a>
+		return HAL_GPIO_ReadPin(PIN15_GPIO_Port, PIN15_Pin);
  8000ef6:	2110      	movs	r1, #16
  8000ef8:	4834      	ldr	r0, [pc, #208]	; (8000fcc <readInputValue+0x134>)
  8000efa:	f002 fa8f 	bl	800341c <HAL_GPIO_ReadPin>
  8000efe:	4603      	mov	r3, r0
  8000f00:	e060      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 16) {
  8000f02:	79fb      	ldrb	r3, [r7, #7]
  8000f04:	2b10      	cmp	r3, #16
  8000f06:	d106      	bne.n	8000f16 <readInputValue+0x7e>
+		return HAL_GPIO_ReadPin(PIN16_GPIO_Port, PIN16_Pin);
  8000f08:	f44f 7100 	mov.w	r1, #512	; 0x200
  8000f0c:	482f      	ldr	r0, [pc, #188]	; (8000fcc <readInputValue+0x134>)
  8000f0e:	f002 fa85 	bl	800341c <HAL_GPIO_ReadPin>
  8000f12:	4603      	mov	r3, r0
  8000f14:	e056      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 17) {
  8000f16:	79fb      	ldrb	r3, [r7, #7]
  8000f18:	2b11      	cmp	r3, #17
  8000f1a:	d106      	bne.n	8000f2a <readInputValue+0x92>
+		return HAL_GPIO_ReadPin(PIN17_GPIO_Port, PIN17_Pin);
  8000f1c:	f44f 7180 	mov.w	r1, #256	; 0x100
  8000f20:	482a      	ldr	r0, [pc, #168]	; (8000fcc <readInputValue+0x134>)
  8000f22:	f002 fa7b 	bl	800341c <HAL_GPIO_ReadPin>
  8000f26:	4603      	mov	r3, r0
  8000f28:	e04c      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 18) {
  8000f2a:	79fb      	ldrb	r3, [r7, #7]
  8000f2c:	2b12      	cmp	r3, #18
  8000f2e:	d106      	bne.n	8000f3e <readInputValue+0xa6>
+		return HAL_GPIO_ReadPin(PIN18_GPIO_Port, PIN18_Pin);
  8000f30:	f44f 6100 	mov.w	r1, #2048	; 0x800
  8000f34:	4825      	ldr	r0, [pc, #148]	; (8000fcc <readInputValue+0x134>)
  8000f36:	f002 fa71 	bl	800341c <HAL_GPIO_ReadPin>
  8000f3a:	4603      	mov	r3, r0
  8000f3c:	e042      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 19) {
  8000f3e:	79fb      	ldrb	r3, [r7, #7]
  8000f40:	2b13      	cmp	r3, #19
  8000f42:	d106      	bne.n	8000f52 <readInputValue+0xba>
+		return HAL_GPIO_ReadPin(PIN19_GPIO_Port, PIN19_Pin);
  8000f44:	f44f 6180 	mov.w	r1, #1024	; 0x400
  8000f48:	4820      	ldr	r0, [pc, #128]	; (8000fcc <readInputValue+0x134>)
  8000f4a:	f002 fa67 	bl	800341c <HAL_GPIO_ReadPin>
  8000f4e:	4603      	mov	r3, r0
  8000f50:	e038      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 20) {
  8000f52:	79fb      	ldrb	r3, [r7, #7]
  8000f54:	2b14      	cmp	r3, #20
  8000f56:	d105      	bne.n	8000f64 <readInputValue+0xcc>
+		return HAL_GPIO_ReadPin(PIN20_GPIO_Port, PIN20_Pin);
  8000f58:	2101      	movs	r1, #1
  8000f5a:	481c      	ldr	r0, [pc, #112]	; (8000fcc <readInputValue+0x134>)
  8000f5c:	f002 fa5e 	bl	800341c <HAL_GPIO_ReadPin>
  8000f60:	4603      	mov	r3, r0
  8000f62:	e02f      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 21) {
  8000f64:	79fb      	ldrb	r3, [r7, #7]
  8000f66:	2b15      	cmp	r3, #21
  8000f68:	d105      	bne.n	8000f76 <readInputValue+0xde>
+		return HAL_GPIO_ReadPin(PIN21_GPIO_Port, PIN21_Pin);
  8000f6a:	2104      	movs	r1, #4
  8000f6c:	4817      	ldr	r0, [pc, #92]	; (8000fcc <readInputValue+0x134>)
  8000f6e:	f002 fa55 	bl	800341c <HAL_GPIO_ReadPin>
  8000f72:	4603      	mov	r3, r0
  8000f74:	e026      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 22) {
  8000f76:	79fb      	ldrb	r3, [r7, #7]
  8000f78:	2b16      	cmp	r3, #22
  8000f7a:	d105      	bne.n	8000f88 <readInputValue+0xf0>
+		return HAL_GPIO_ReadPin(PIN22_GPIO_Port, PIN22_Pin);
  8000f7c:	2102      	movs	r1, #2
  8000f7e:	4813      	ldr	r0, [pc, #76]	; (8000fcc <readInputValue+0x134>)
  8000f80:	f002 fa4c 	bl	800341c <HAL_GPIO_ReadPin>
  8000f84:	4603      	mov	r3, r0
  8000f86:	e01d      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 23) {
  8000f88:	79fb      	ldrb	r3, [r7, #7]
  8000f8a:	2b17      	cmp	r3, #23
  8000f8c:	d106      	bne.n	8000f9c <readInputValue+0x104>
+		return HAL_GPIO_ReadPin(PIN23_GPIO_Port, PIN23_Pin);
  8000f8e:	f44f 5180 	mov.w	r1, #4096	; 0x1000
  8000f92:	480e      	ldr	r0, [pc, #56]	; (8000fcc <readInputValue+0x134>)
  8000f94:	f002 fa42 	bl	800341c <HAL_GPIO_ReadPin>
  8000f98:	4603      	mov	r3, r0
  8000f9a:	e013      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 24) {
  8000f9c:	79fb      	ldrb	r3, [r7, #7]
  8000f9e:	2b18      	cmp	r3, #24
  8000fa0:	d106      	bne.n	8000fb0 <readInputValue+0x118>
+		return HAL_GPIO_ReadPin(PIN24_GPIO_Port, PIN24_Pin);
  8000fa2:	f44f 5100 	mov.w	r1, #8192	; 0x2000
  8000fa6:	4809      	ldr	r0, [pc, #36]	; (8000fcc <readInputValue+0x134>)
  8000fa8:	f002 fa38 	bl	800341c <HAL_GPIO_ReadPin>
  8000fac:	4603      	mov	r3, r0
  8000fae:	e009      	b.n	8000fc4 <readInputValue+0x12c>
+	} else if (pin == 25) {
  8000fb0:	79fb      	ldrb	r3, [r7, #7]
  8000fb2:	2b19      	cmp	r3, #25
  8000fb4:	d106      	bne.n	8000fc4 <readInputValue+0x12c>
+		return HAL_GPIO_ReadPin(PIN25_GPIO_Port, PIN25_Pin);
  8000fb6:	f44f 4180 	mov.w	r1, #16384	; 0x4000
  8000fba:	4804      	ldr	r0, [pc, #16]	; (8000fcc <readInputValue+0x134>)
  8000fbc:	f002 fa2e 	bl	800341c <HAL_GPIO_ReadPin>
  8000fc0:	4603      	mov	r3, r0
  8000fc2:	e7ff      	b.n	8000fc4 <readInputValue+0x12c>
+	}
+}
  8000fc4:	4618      	mov	r0, r3
  8000fc6:	3708      	adds	r7, #8
  8000fc8:	46bd      	mov	sp, r7
@@ -1466,6 +1537,8 @@ Disassembly of section .text:
  8000fd0:	40010800 	.word	0x40010800
 
 08000fd4 <setOuptutValue>:
+
+void setOuptutValue(uint8_t pin, uint8_t value) {
  8000fd4:	b580      	push	{r7, lr}
  8000fd6:	b082      	sub	sp, #8
  8000fd8:	af00      	add	r7, sp, #0
@@ -1474,9 +1547,11 @@ Disassembly of section .text:
  8000fde:	71fb      	strb	r3, [r7, #7]
  8000fe0:	4613      	mov	r3, r2
  8000fe2:	71bb      	strb	r3, [r7, #6]
+	if (pin == 1) {
  8000fe4:	79fb      	ldrb	r3, [r7, #7]
  8000fe6:	2b01      	cmp	r3, #1
  8000fe8:	d110      	bne.n	800100c <setOuptutValue+0x38>
+		dimmerValue[0] = (100 - value) * 100;
  8000fea:	79bb      	ldrb	r3, [r7, #6]
  8000fec:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8000ff0:	b29b      	uxth	r3, r3
@@ -1493,9 +1568,11 @@ Disassembly of section .text:
  8001006:	4b6a      	ldr	r3, [pc, #424]	; (80011b0 <setOuptutValue+0x1dc>)
  8001008:	801a      	strh	r2, [r3, #0]
  800100a:	e0c9      	b.n	80011a0 <setOuptutValue+0x1cc>
+	} else if (pin == 2) {
  800100c:	79fb      	ldrb	r3, [r7, #7]
  800100e:	2b02      	cmp	r3, #2
  8001010:	d110      	bne.n	8001034 <setOuptutValue+0x60>
+		dimmerValue[1] = (100 - value) * 100;
  8001012:	79bb      	ldrb	r3, [r7, #6]
  8001014:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8001018:	b29b      	uxth	r3, r3
@@ -1512,9 +1589,12 @@ Disassembly of section .text:
  800102e:	4b60      	ldr	r3, [pc, #384]	; (80011b0 <setOuptutValue+0x1dc>)
  8001030:	805a      	strh	r2, [r3, #2]
  8001032:	e0b5      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN2_GPIO_Port, PIN2_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 3) {
  8001034:	79fb      	ldrb	r3, [r7, #7]
  8001036:	2b03      	cmp	r3, #3
  8001038:	d110      	bne.n	800105c <setOuptutValue+0x88>
+		dimmerValue[2] = (100 - value) * 100;
  800103a:	79bb      	ldrb	r3, [r7, #6]
  800103c:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8001040:	b29b      	uxth	r3, r3
@@ -1531,9 +1611,12 @@ Disassembly of section .text:
  8001056:	4b56      	ldr	r3, [pc, #344]	; (80011b0 <setOuptutValue+0x1dc>)
  8001058:	809a      	strh	r2, [r3, #4]
  800105a:	e0a1      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN3_GPIO_Port, PIN3_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 4) {
  800105c:	79fb      	ldrb	r3, [r7, #7]
  800105e:	2b04      	cmp	r3, #4
  8001060:	d110      	bne.n	8001084 <setOuptutValue+0xb0>
+		dimmerValue[3] = (100 - value) * 100;
  8001062:	79bb      	ldrb	r3, [r7, #6]
  8001064:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8001068:	b29b      	uxth	r3, r3
@@ -1550,9 +1633,12 @@ Disassembly of section .text:
  800107e:	4b4c      	ldr	r3, [pc, #304]	; (80011b0 <setOuptutValue+0x1dc>)
  8001080:	80da      	strh	r2, [r3, #6]
  8001082:	e08d      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN4_GPIO_Port, PIN4_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 5) {
  8001084:	79fb      	ldrb	r3, [r7, #7]
  8001086:	2b05      	cmp	r3, #5
  8001088:	d110      	bne.n	80010ac <setOuptutValue+0xd8>
+		dimmerValue[4] = (100 - value) * 100;
  800108a:	79bb      	ldrb	r3, [r7, #6]
  800108c:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8001090:	b29b      	uxth	r3, r3
@@ -1569,9 +1655,12 @@ Disassembly of section .text:
  80010a6:	4b42      	ldr	r3, [pc, #264]	; (80011b0 <setOuptutValue+0x1dc>)
  80010a8:	811a      	strh	r2, [r3, #8]
  80010aa:	e079      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN5_GPIO_Port, PIN5_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 6) {
  80010ac:	79fb      	ldrb	r3, [r7, #7]
  80010ae:	2b06      	cmp	r3, #6
  80010b0:	d110      	bne.n	80010d4 <setOuptutValue+0x100>
+		dimmerValue[5] = (100 - value) * 100;
  80010b2:	79bb      	ldrb	r3, [r7, #6]
  80010b4:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  80010b8:	b29b      	uxth	r3, r3
@@ -1588,9 +1677,12 @@ Disassembly of section .text:
  80010ce:	4b38      	ldr	r3, [pc, #224]	; (80011b0 <setOuptutValue+0x1dc>)
  80010d0:	815a      	strh	r2, [r3, #10]
  80010d2:	e065      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN6_GPIO_Port, PIN6_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 7) {
  80010d4:	79fb      	ldrb	r3, [r7, #7]
  80010d6:	2b07      	cmp	r3, #7
  80010d8:	d110      	bne.n	80010fc <setOuptutValue+0x128>
+		dimmerValue[6] = (100 - value) * 100;
  80010da:	79bb      	ldrb	r3, [r7, #6]
  80010dc:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  80010e0:	b29b      	uxth	r3, r3
@@ -1607,9 +1699,12 @@ Disassembly of section .text:
  80010f6:	4b2e      	ldr	r3, [pc, #184]	; (80011b0 <setOuptutValue+0x1dc>)
  80010f8:	819a      	strh	r2, [r3, #12]
  80010fa:	e051      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN7_GPIO_Port, PIN7_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 8) {
  80010fc:	79fb      	ldrb	r3, [r7, #7]
  80010fe:	2b08      	cmp	r3, #8
  8001100:	d110      	bne.n	8001124 <setOuptutValue+0x150>
+		dimmerValue[7] = (100 - value) * 100;
  8001102:	79bb      	ldrb	r3, [r7, #6]
  8001104:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8001108:	b29b      	uxth	r3, r3
@@ -1626,9 +1721,12 @@ Disassembly of section .text:
  800111e:	4b24      	ldr	r3, [pc, #144]	; (80011b0 <setOuptutValue+0x1dc>)
  8001120:	81da      	strh	r2, [r3, #14]
  8001122:	e03d      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN8_GPIO_Port, PIN8_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 9) {
  8001124:	79fb      	ldrb	r3, [r7, #7]
  8001126:	2b09      	cmp	r3, #9
  8001128:	d110      	bne.n	800114c <setOuptutValue+0x178>
+		dimmerValue[8] = (100 - value) * 100;
  800112a:	79bb      	ldrb	r3, [r7, #6]
  800112c:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8001130:	b29b      	uxth	r3, r3
@@ -1645,9 +1743,12 @@ Disassembly of section .text:
  8001146:	4b1a      	ldr	r3, [pc, #104]	; (80011b0 <setOuptutValue+0x1dc>)
  8001148:	821a      	strh	r2, [r3, #16]
  800114a:	e029      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN9_GPIO_Port, PIN9_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 10) {
  800114c:	79fb      	ldrb	r3, [r7, #7]
  800114e:	2b0a      	cmp	r3, #10
  8001150:	d110      	bne.n	8001174 <setOuptutValue+0x1a0>
+		dimmerValue[9] = (100 - value) * 100;
  8001152:	79bb      	ldrb	r3, [r7, #6]
  8001154:	f1c3 0364 	rsb	r3, r3, #100	; 0x64
  8001158:	b29b      	uxth	r3, r3
@@ -1664,9 +1765,12 @@ Disassembly of section .text:
  800116e:	4b10      	ldr	r3, [pc, #64]	; (80011b0 <setOuptutValue+0x1dc>)
  8001170:	825a      	strh	r2, [r3, #18]
  8001172:	e015      	b.n	80011a0 <setOuptutValue+0x1cc>
+		//HAL_GPIO_WritePin(PIN10_GPIO_Port, PIN10_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	} else if (pin == 27) {
  8001174:	79fb      	ldrb	r3, [r7, #7]
  8001176:	2b1b      	cmp	r3, #27
  8001178:	d10c      	bne.n	8001194 <setOuptutValue+0x1c0>
+		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, value == 1 ? GPIO_PIN_RESET : GPIO_PIN_SET);
  800117a:	79bb      	ldrb	r3, [r7, #6]
  800117c:	2b01      	cmp	r3, #1
  800117e:	bf14      	ite	ne
@@ -1678,15 +1782,21 @@ Disassembly of section .text:
  800118c:	4809      	ldr	r0, [pc, #36]	; (80011b4 <setOuptutValue+0x1e0>)
  800118e:	f002 f95c 	bl	800344a <HAL_GPIO_WritePin>
  8001192:	e005      	b.n	80011a0 <setOuptutValue+0x1cc>
+	} else if (pin == 28) {
  8001194:	79fb      	ldrb	r3, [r7, #7]
  8001196:	2b1c      	cmp	r3, #28
  8001198:	d102      	bne.n	80011a0 <setOuptutValue+0x1cc>
+		temperatureThreshold = value;
  800119a:	4a07      	ldr	r2, [pc, #28]	; (80011b8 <setOuptutValue+0x1e4>)
  800119c:	79bb      	ldrb	r3, [r7, #6]
  800119e:	7013      	strb	r3, [r2, #0]
+	}
+	error = 0;
  80011a0:	4b06      	ldr	r3, [pc, #24]	; (80011bc <setOuptutValue+0x1e8>)
  80011a2:	2200      	movs	r2, #0
  80011a4:	701a      	strb	r2, [r3, #0]
+
+}
  80011a6:	bf00      	nop
  80011a8:	3708      	adds	r7, #8
  80011aa:	46bd      	mov	sp, r7
@@ -1698,40 +1808,87 @@ Disassembly of section .text:
  80011bc:	20000188 	.word	0x20000188
 
 080011c0 <main>:
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
  80011c0:	b580      	push	{r7, lr}
  80011c2:	b082      	sub	sp, #8
  80011c4:	af00      	add	r7, sp, #0
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
  80011c6:	f000 fd93 	bl	8001cf0 <HAL_Init>
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
  80011ca:	f000 f937 	bl	800143c <SystemClock_Config>
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
  80011ce:	f7ff fc73 	bl	8000ab8 <MX_GPIO_Init>
+  MX_DMA_Init();
  80011d2:	f7ff fc53 	bl	8000a7c <MX_DMA_Init>
+  MX_I2C1_Init();
  80011d6:	f7ff fcf9 	bl	8000bcc <MX_I2C1_Init>
+  MX_USART1_UART_Init();
  80011da:	f000 fced 	bl	8001bb8 <MX_USART1_UART_Init>
+  MX_ADC1_Init();
  80011de:	f7ff fbad 	bl	800093c <MX_ADC1_Init>
+  MX_RTC_Init();
  80011e2:	f000 fa9d 	bl	8001720 <MX_RTC_Init>
+  MX_TIM2_Init();
  80011e6:	f000 fc1f 	bl	8001a28 <MX_TIM2_Init>
+  /* USER CODE BEGIN 2 */
+
+  HAL_ADCEx_Calibration_Start(&hadc1);
  80011ea:	4882      	ldr	r0, [pc, #520]	; (80013f4 <main+0x234>)
  80011ec:	f001 fa6c 	bl	80026c8 <HAL_ADCEx_Calibration_Start>
+  HAL_I2C_EnableListen_IT(&hi2c1);
  80011f0:	4881      	ldr	r0, [pc, #516]	; (80013f8 <main+0x238>)
  80011f2:	f002 fbae 	bl	8003952 <HAL_I2C_EnableListen_IT>
+  HAL_ADC_Start_DMA(&hadc1, adcDmaValue, 2);
  80011f6:	2202      	movs	r2, #2
  80011f8:	4980      	ldr	r1, [pc, #512]	; (80013fc <main+0x23c>)
  80011fa:	487e      	ldr	r0, [pc, #504]	; (80013f4 <main+0x234>)
  80011fc:	f000 feb2 	bl	8001f64 <HAL_ADC_Start_DMA>
+  HAL_GPIO_WritePin(GPIOC, 13, GPIO_PIN_RESET);
  8001200:	2200      	movs	r2, #0
  8001202:	210d      	movs	r1, #13
  8001204:	487e      	ldr	r0, [pc, #504]	; (8001400 <main+0x240>)
  8001206:	f002 f920 	bl	800344a <HAL_GPIO_WritePin>
+  HAL_TIM_Base_Start_IT(&htim2);
  800120a:	487e      	ldr	r0, [pc, #504]	; (8001404 <main+0x244>)
  800120c:	f005 f9c0 	bl	8006590 <HAL_TIM_Base_Start_IT>
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2);
  8001210:	2104      	movs	r1, #4
  8001212:	487c      	ldr	r0, [pc, #496]	; (8001404 <main+0x244>)
  8001214:	f005 fa66 	bl	80066e4 <HAL_TIM_IC_Start_IT>
+
+  printf("Stm 32 Port Expander by Eugen Scobich\r\n");
  8001218:	487b      	ldr	r0, [pc, #492]	; (8001408 <main+0x248>)
  800121a:	f006 fb87 	bl	800792c <puts>
+	while (1) {
+		#if DEBUG
+			uint32_t currentTick = HAL_GetTick();
+		#endif
+
+		uint32_t timerCurrentCounter = TIM2->CNT;
  800121e:	f04f 4380 	mov.w	r3, #1073741824	; 0x40000000
  8001222:	6a5b      	ldr	r3, [r3, #36]	; 0x24
  8001224:	607b      	str	r3, [r7, #4]
+		uint32_t delta = (timerCurrentCounter + 10000 * timerOverloadedCount) - timerCapturedCounter;
  8001226:	4b79      	ldr	r3, [pc, #484]	; (800140c <main+0x24c>)
  8001228:	781b      	ldrb	r3, [r3, #0]
  800122a:	461a      	mov	r2, r3
@@ -1744,6 +1901,7 @@ Disassembly of section .text:
  800123c:	681b      	ldr	r3, [r3, #0]
  800123e:	1ad3      	subs	r3, r2, r3
  8001240:	603b      	str	r3, [r7, #0]
+		if (delta > DIMMER_RESET_TRESHHOLD || error) {
  8001242:	683b      	ldr	r3, [r7, #0]
  8001244:	f242 62ac 	movw	r2, #9900	; 0x26ac
  8001248:	4293      	cmp	r3, r2
@@ -1752,114 +1910,153 @@ Disassembly of section .text:
  800124e:	781b      	ldrb	r3, [r3, #0]
  8001250:	2b00      	cmp	r3, #0
  8001252:	d003      	beq.n	800125c <main+0x9c>
+			GPIOA->BSRR = DIMMER_PINS_RESET;
  8001254:	4b70      	ldr	r3, [pc, #448]	; (8001418 <main+0x258>)
  8001256:	4a71      	ldr	r2, [pc, #452]	; (800141c <main+0x25c>)
  8001258:	611a      	str	r2, [r3, #16]
  800125a:	e06f      	b.n	800133c <main+0x17c>
+		} else {
+			if (dimmerValue[0] < delta) {
  800125c:	4b70      	ldr	r3, [pc, #448]	; (8001420 <main+0x260>)
  800125e:	881b      	ldrh	r3, [r3, #0]
  8001260:	461a      	mov	r2, r3
  8001262:	683b      	ldr	r3, [r7, #0]
  8001264:	4293      	cmp	r3, r2
  8001266:	d904      	bls.n	8001272 <main+0xb2>
+				HAL_GPIO_WritePin(PIN1_GPIO_Port, PIN1_Pin, GPIO_PIN_SET);
  8001268:	2201      	movs	r2, #1
  800126a:	2101      	movs	r1, #1
  800126c:	486a      	ldr	r0, [pc, #424]	; (8001418 <main+0x258>)
  800126e:	f002 f8ec 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[1] < delta) {
  8001272:	4b6b      	ldr	r3, [pc, #428]	; (8001420 <main+0x260>)
  8001274:	885b      	ldrh	r3, [r3, #2]
  8001276:	461a      	mov	r2, r3
  8001278:	683b      	ldr	r3, [r7, #0]
  800127a:	4293      	cmp	r3, r2
  800127c:	d904      	bls.n	8001288 <main+0xc8>
+				HAL_GPIO_WritePin(PIN2_GPIO_Port, PIN2_Pin, GPIO_PIN_SET);
  800127e:	2201      	movs	r2, #1
  8001280:	2102      	movs	r1, #2
  8001282:	4865      	ldr	r0, [pc, #404]	; (8001418 <main+0x258>)
  8001284:	f002 f8e1 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[2] < delta) {
  8001288:	4b65      	ldr	r3, [pc, #404]	; (8001420 <main+0x260>)
  800128a:	889b      	ldrh	r3, [r3, #4]
  800128c:	461a      	mov	r2, r3
  800128e:	683b      	ldr	r3, [r7, #0]
  8001290:	4293      	cmp	r3, r2
  8001292:	d904      	bls.n	800129e <main+0xde>
+				HAL_GPIO_WritePin(PIN3_GPIO_Port, PIN3_Pin, GPIO_PIN_SET);
  8001294:	2201      	movs	r2, #1
  8001296:	2104      	movs	r1, #4
  8001298:	485f      	ldr	r0, [pc, #380]	; (8001418 <main+0x258>)
  800129a:	f002 f8d6 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[3] < delta) {
  800129e:	4b60      	ldr	r3, [pc, #384]	; (8001420 <main+0x260>)
  80012a0:	88db      	ldrh	r3, [r3, #6]
  80012a2:	461a      	mov	r2, r3
  80012a4:	683b      	ldr	r3, [r7, #0]
  80012a6:	4293      	cmp	r3, r2
  80012a8:	d904      	bls.n	80012b4 <main+0xf4>
+				HAL_GPIO_WritePin(PIN4_GPIO_Port, PIN4_Pin, GPIO_PIN_SET);
  80012aa:	2201      	movs	r2, #1
  80012ac:	2108      	movs	r1, #8
  80012ae:	485a      	ldr	r0, [pc, #360]	; (8001418 <main+0x258>)
  80012b0:	f002 f8cb 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[4] < delta) {
  80012b4:	4b5a      	ldr	r3, [pc, #360]	; (8001420 <main+0x260>)
  80012b6:	891b      	ldrh	r3, [r3, #8]
  80012b8:	461a      	mov	r2, r3
  80012ba:	683b      	ldr	r3, [r7, #0]
  80012bc:	4293      	cmp	r3, r2
  80012be:	d904      	bls.n	80012ca <main+0x10a>
+				HAL_GPIO_WritePin(PIN5_GPIO_Port, PIN5_Pin, GPIO_PIN_SET);
  80012c0:	2201      	movs	r2, #1
  80012c2:	2110      	movs	r1, #16
  80012c4:	4854      	ldr	r0, [pc, #336]	; (8001418 <main+0x258>)
  80012c6:	f002 f8c0 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[5] < delta) {
  80012ca:	4b55      	ldr	r3, [pc, #340]	; (8001420 <main+0x260>)
  80012cc:	895b      	ldrh	r3, [r3, #10]
  80012ce:	461a      	mov	r2, r3
  80012d0:	683b      	ldr	r3, [r7, #0]
  80012d2:	4293      	cmp	r3, r2
  80012d4:	d904      	bls.n	80012e0 <main+0x120>
+				HAL_GPIO_WritePin(PIN6_GPIO_Port, PIN6_Pin, GPIO_PIN_SET);
  80012d6:	2201      	movs	r2, #1
  80012d8:	2120      	movs	r1, #32
  80012da:	484f      	ldr	r0, [pc, #316]	; (8001418 <main+0x258>)
  80012dc:	f002 f8b5 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[6] < delta) {
  80012e0:	4b4f      	ldr	r3, [pc, #316]	; (8001420 <main+0x260>)
  80012e2:	899b      	ldrh	r3, [r3, #12]
  80012e4:	461a      	mov	r2, r3
  80012e6:	683b      	ldr	r3, [r7, #0]
  80012e8:	4293      	cmp	r3, r2
  80012ea:	d904      	bls.n	80012f6 <main+0x136>
+				HAL_GPIO_WritePin(PIN7_GPIO_Port, PIN7_Pin, GPIO_PIN_SET);
  80012ec:	2201      	movs	r2, #1
  80012ee:	2140      	movs	r1, #64	; 0x40
  80012f0:	4849      	ldr	r0, [pc, #292]	; (8001418 <main+0x258>)
  80012f2:	f002 f8aa 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[7] < delta) {
  80012f6:	4b4a      	ldr	r3, [pc, #296]	; (8001420 <main+0x260>)
  80012f8:	89db      	ldrh	r3, [r3, #14]
  80012fa:	461a      	mov	r2, r3
  80012fc:	683b      	ldr	r3, [r7, #0]
  80012fe:	4293      	cmp	r3, r2
  8001300:	d904      	bls.n	800130c <main+0x14c>
+				HAL_GPIO_WritePin(PIN8_GPIO_Port, PIN8_Pin, GPIO_PIN_SET);
  8001302:	2201      	movs	r2, #1
  8001304:	2180      	movs	r1, #128	; 0x80
  8001306:	4844      	ldr	r0, [pc, #272]	; (8001418 <main+0x258>)
  8001308:	f002 f89f 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[8] < delta) {
  800130c:	4b44      	ldr	r3, [pc, #272]	; (8001420 <main+0x260>)
  800130e:	8a1b      	ldrh	r3, [r3, #16]
  8001310:	461a      	mov	r2, r3
  8001312:	683b      	ldr	r3, [r7, #0]
  8001314:	4293      	cmp	r3, r2
  8001316:	d905      	bls.n	8001324 <main+0x164>
+				HAL_GPIO_WritePin(PIN9_GPIO_Port, PIN9_Pin, GPIO_PIN_SET);
  8001318:	2201      	movs	r2, #1
  800131a:	f44f 6100 	mov.w	r1, #2048	; 0x800
  800131e:	483e      	ldr	r0, [pc, #248]	; (8001418 <main+0x258>)
  8001320:	f002 f893 	bl	800344a <HAL_GPIO_WritePin>
+			}
+			if (dimmerValue[9] < delta) {
  8001324:	4b3e      	ldr	r3, [pc, #248]	; (8001420 <main+0x260>)
  8001326:	8a5b      	ldrh	r3, [r3, #18]
  8001328:	461a      	mov	r2, r3
  800132a:	683b      	ldr	r3, [r7, #0]
  800132c:	4293      	cmp	r3, r2
  800132e:	d905      	bls.n	800133c <main+0x17c>
+				HAL_GPIO_WritePin(PIN10_GPIO_Port, PIN10_Pin, GPIO_PIN_SET);
  8001330:	2201      	movs	r2, #1
  8001332:	f44f 7180 	mov.w	r1, #256	; 0x100
  8001336:	4838      	ldr	r0, [pc, #224]	; (8001418 <main+0x258>)
  8001338:	f002 f887 	bl	800344a <HAL_GPIO_WritePin>
+			}
+		}
+
+		if (i2cState == 1) {
  800133c:	4b39      	ldr	r3, [pc, #228]	; (8001424 <main+0x264>)
  800133e:	781b      	ldrb	r3, [r3, #0]
  8001340:	2b01      	cmp	r3, #1
  8001342:	d10a      	bne.n	800135a <main+0x19a>
+			#if DEBUG
+				printf("Received data: value:[%d], pin:[%d]\r\n", rxData[1], rxData[0]);
+			#endif
+			setOuptutValue(rxData[0], rxData[1]);
  8001344:	4b38      	ldr	r3, [pc, #224]	; (8001428 <main+0x268>)
  8001346:	781b      	ldrb	r3, [r3, #0]
  8001348:	4a37      	ldr	r2, [pc, #220]	; (8001428 <main+0x268>)
@@ -1867,16 +2064,22 @@ Disassembly of section .text:
  800134c:	4611      	mov	r1, r2
  800134e:	4618      	mov	r0, r3
  8001350:	f7ff fe40 	bl	8000fd4 <setOuptutValue>
+			i2cState = 0;
  8001354:	4b33      	ldr	r3, [pc, #204]	; (8001424 <main+0x264>)
  8001356:	2200      	movs	r2, #0
  8001358:	701a      	strb	r2, [r3, #0]
+		}
+
+		if (i2cState == 3) {
  800135a:	4b32      	ldr	r3, [pc, #200]	; (8001424 <main+0x264>)
  800135c:	781b      	ldrb	r3, [r3, #0]
  800135e:	2b03      	cmp	r3, #3
  8001360:	f47f af5d 	bne.w	800121e <main+0x5e>
+			i2cState = 0;
  8001364:	4b2f      	ldr	r3, [pc, #188]	; (8001424 <main+0x264>)
  8001366:	2200      	movs	r2, #0
  8001368:	701a      	strb	r2, [r3, #0]
+			if (isAnalogPin(rxData[0])) {
  800136a:	4b2f      	ldr	r3, [pc, #188]	; (8001428 <main+0x268>)
  800136c:	781b      	ldrb	r3, [r3, #0]
  800136e:	4618      	mov	r0, r3
@@ -1884,6 +2087,7 @@ Disassembly of section .text:
  8001374:	4603      	mov	r3, r0
  8001376:	2b00      	cmp	r3, #0
  8001378:	d012      	beq.n	80013a0 <main+0x1e0>
+				txData[0] = readAnalogValue(rxData[0]);
  800137a:	4b2b      	ldr	r3, [pc, #172]	; (8001428 <main+0x268>)
  800137c:	781b      	ldrb	r3, [r3, #0]
  800137e:	4618      	mov	r0, r3
@@ -1892,16 +2096,23 @@ Disassembly of section .text:
  8001386:	461a      	mov	r2, r3
  8001388:	4b28      	ldr	r3, [pc, #160]	; (800142c <main+0x26c>)
  800138a:	701a      	strb	r2, [r3, #0]
+				if (txData[0] > temperatureThreshold) {
  800138c:	4b27      	ldr	r3, [pc, #156]	; (800142c <main+0x26c>)
  800138e:	781a      	ldrb	r2, [r3, #0]
  8001390:	4b27      	ldr	r3, [pc, #156]	; (8001430 <main+0x270>)
  8001392:	781b      	ldrb	r3, [r3, #0]
  8001394:	429a      	cmp	r2, r3
  8001396:	d91b      	bls.n	80013d0 <main+0x210>
+					error = 1;
  8001398:	4b1e      	ldr	r3, [pc, #120]	; (8001414 <main+0x254>)
  800139a:	2201      	movs	r2, #1
  800139c:	701a      	strb	r2, [r3, #0]
  800139e:	e017      	b.n	80013d0 <main+0x210>
+				}
+				#if DEBUG
+					printf("Transfer analog value:[%d] for pin:[%d]\r\n", txData[0], rxData[0]);
+				#endif
+			} else if (isInputPin(rxData[0])) {
  80013a0:	4b21      	ldr	r3, [pc, #132]	; (8001428 <main+0x268>)
  80013a2:	781b      	ldrb	r3, [r3, #0]
  80013a4:	4618      	mov	r0, r3
@@ -1909,6 +2120,7 @@ Disassembly of section .text:
  80013aa:	4603      	mov	r3, r0
  80013ac:	2b00      	cmp	r3, #0
  80013ae:	d009      	beq.n	80013c4 <main+0x204>
+				txData[0] = readInputValue(rxData[0]);
  80013b0:	4b1d      	ldr	r3, [pc, #116]	; (8001428 <main+0x268>)
  80013b2:	781b      	ldrb	r3, [r3, #0]
  80013b4:	4618      	mov	r0, r3
@@ -1918,11 +2130,19 @@ Disassembly of section .text:
  80013be:	4b1b      	ldr	r3, [pc, #108]	; (800142c <main+0x26c>)
  80013c0:	701a      	strb	r2, [r3, #0]
  80013c2:	e005      	b.n	80013d0 <main+0x210>
+				#if DEBUG
+					printf("Transfer input value:[%d] for pin:[%d]\r\n", txData[0], rxData[0]);
+				#endif
+			} else {
+				printf("Error: Received request for pin:[%d] that is not input or output\r\n", rxData[0]);
  80013c4:	4b18      	ldr	r3, [pc, #96]	; (8001428 <main+0x268>)
  80013c6:	781b      	ldrb	r3, [r3, #0]
  80013c8:	4619      	mov	r1, r3
  80013ca:	481a      	ldr	r0, [pc, #104]	; (8001434 <main+0x274>)
  80013cc:	f006 fa48 	bl	8007860 <iprintf>
+			}
+
+			if (HAL_I2C_Slave_Sequential_Transmit_IT(&hi2c1, txData, 1, I2C_LAST_FRAME) != HAL_OK) {
  80013d0:	2320      	movs	r3, #32
  80013d2:	2201      	movs	r2, #1
  80013d4:	4915      	ldr	r1, [pc, #84]	; (800142c <main+0x26c>)
@@ -1931,11 +2151,13 @@ Disassembly of section .text:
  80013dc:	4603      	mov	r3, r0
  80013de:	2b00      	cmp	r3, #0
  80013e0:	f43f af1d 	beq.w	800121e <main+0x5e>
+				printf("Error: Could not send data for pin:[%d]\r\n", rxData[0]);
  80013e4:	4b10      	ldr	r3, [pc, #64]	; (8001428 <main+0x268>)
  80013e6:	781b      	ldrb	r3, [r3, #0]
  80013e8:	4619      	mov	r1, r3
  80013ea:	4813      	ldr	r0, [pc, #76]	; (8001438 <main+0x278>)
  80013ec:	f006 fa38 	bl	8007860 <iprintf>
+	while (1) {
  80013f0:	e715      	b.n	800121e <main+0x5e>
  80013f2:	bf00      	nop
  80013f4:	20000088 	.word	0x20000088
@@ -1958,14 +2180,22 @@ Disassembly of section .text:
  8001438:	08008694 	.word	0x08008694
 
 0800143c <SystemClock_Config>:
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
  800143c:	b580      	push	{r7, lr}
  800143e:	b094      	sub	sp, #80	; 0x50
  8001440:	af00      	add	r7, sp, #0
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
  8001442:	f107 0328 	add.w	r3, r7, #40	; 0x28
  8001446:	2228      	movs	r2, #40	; 0x28
  8001448:	2100      	movs	r1, #0
  800144a:	4618      	mov	r0, r3
  800144c:	f006 fb4e 	bl	8007aec <memset>
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
  8001450:	f107 0314 	add.w	r3, r7, #20
  8001454:	2200      	movs	r2, #0
  8001456:	601a      	str	r2, [r3, #0]
@@ -1973,45 +2203,73 @@ Disassembly of section .text:
  800145a:	609a      	str	r2, [r3, #8]
  800145c:	60da      	str	r2, [r3, #12]
  800145e:	611a      	str	r2, [r3, #16]
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
  8001460:	1d3b      	adds	r3, r7, #4
  8001462:	2200      	movs	r2, #0
  8001464:	601a      	str	r2, [r3, #0]
  8001466:	605a      	str	r2, [r3, #4]
  8001468:	609a      	str	r2, [r3, #8]
  800146a:	60da      	str	r2, [r3, #12]
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
  800146c:	2309      	movs	r3, #9
  800146e:	62bb      	str	r3, [r7, #40]	; 0x28
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
  8001470:	f44f 3380 	mov.w	r3, #65536	; 0x10000
  8001474:	62fb      	str	r3, [r7, #44]	; 0x2c
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
  8001476:	2300      	movs	r3, #0
  8001478:	633b      	str	r3, [r7, #48]	; 0x30
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
  800147a:	2301      	movs	r3, #1
  800147c:	63bb      	str	r3, [r7, #56]	; 0x38
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
  800147e:	2301      	movs	r3, #1
  8001480:	643b      	str	r3, [r7, #64]	; 0x40
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
  8001482:	2302      	movs	r3, #2
  8001484:	647b      	str	r3, [r7, #68]	; 0x44
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
  8001486:	f44f 3380 	mov.w	r3, #65536	; 0x10000
  800148a:	64bb      	str	r3, [r7, #72]	; 0x48
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
  800148c:	f44f 13e0 	mov.w	r3, #1835008	; 0x1c0000
  8001490:	64fb      	str	r3, [r7, #76]	; 0x4c
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
  8001492:	f107 0328 	add.w	r3, r7, #40	; 0x28
  8001496:	4618      	mov	r0, r3
  8001498:	f003 ff2a 	bl	80052f0 <HAL_RCC_OscConfig>
  800149c:	4603      	mov	r3, r0
  800149e:	2b00      	cmp	r3, #0
  80014a0:	d001      	beq.n	80014a6 <SystemClock_Config+0x6a>
+  {
+    Error_Handler();
  80014a2:	f000 f933 	bl	800170c <Error_Handler>
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
  80014a6:	230f      	movs	r3, #15
  80014a8:	617b      	str	r3, [r7, #20]
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
  80014aa:	2302      	movs	r3, #2
  80014ac:	61bb      	str	r3, [r7, #24]
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
  80014ae:	2300      	movs	r3, #0
  80014b0:	61fb      	str	r3, [r7, #28]
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
  80014b2:	f44f 6380 	mov.w	r3, #1024	; 0x400
  80014b6:	623b      	str	r3, [r7, #32]
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
  80014b8:	2300      	movs	r3, #0
  80014ba:	627b      	str	r3, [r7, #36]	; 0x24
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
  80014bc:	f107 0314 	add.w	r3, r7, #20
  80014c0:	2102      	movs	r1, #2
  80014c2:	4618      	mov	r0, r3
@@ -2019,36 +2277,54 @@ Disassembly of section .text:
  80014c8:	4603      	mov	r3, r0
  80014ca:	2b00      	cmp	r3, #0
  80014cc:	d001      	beq.n	80014d2 <SystemClock_Config+0x96>
+  {
+    Error_Handler();
  80014ce:	f000 f91d 	bl	800170c <Error_Handler>
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC;
  80014d2:	2303      	movs	r3, #3
  80014d4:	607b      	str	r3, [r7, #4]
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
  80014d6:	f44f 7300 	mov.w	r3, #512	; 0x200
  80014da:	60bb      	str	r3, [r7, #8]
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
  80014dc:	f44f 4300 	mov.w	r3, #32768	; 0x8000
  80014e0:	60fb      	str	r3, [r7, #12]
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
  80014e2:	1d3b      	adds	r3, r7, #4
  80014e4:	4618      	mov	r0, r3
  80014e6:	f004 fb13 	bl	8005b10 <HAL_RCCEx_PeriphCLKConfig>
  80014ea:	4603      	mov	r3, r0
  80014ec:	2b00      	cmp	r3, #0
  80014ee:	d001      	beq.n	80014f4 <SystemClock_Config+0xb8>
+  {
+    Error_Handler();
  80014f0:	f000 f90c 	bl	800170c <Error_Handler>
+  }
+}
  80014f4:	bf00      	nop
  80014f6:	3750      	adds	r7, #80	; 0x50
  80014f8:	46bd      	mov	sp, r7
  80014fa:	bd80      	pop	{r7, pc}
 
 080014fc <__io_putchar>:
+
+/* USER CODE BEGIN 4 */
+
+PUTCHAR_PROTOTYPE {
  80014fc:	b580      	push	{r7, lr}
  80014fe:	b082      	sub	sp, #8
  8001500:	af00      	add	r7, sp, #0
  8001502:	6078      	str	r0, [r7, #4]
+	HAL_UART_Transmit(&huart1, (uint8_t*) &ch, 1, HAL_MAX_DELAY);
  8001504:	1d39      	adds	r1, r7, #4
  8001506:	f04f 33ff 	mov.w	r3, #4294967295
  800150a:	2201      	movs	r2, #1
  800150c:	4803      	ldr	r0, [pc, #12]	; (800151c <__io_putchar+0x20>)
  800150e:	f005 ff65 	bl	80073dc <HAL_UART_Transmit>
+	return ch;
  8001512:	687b      	ldr	r3, [r7, #4]
+}
  8001514:	4618      	mov	r0, r3
  8001516:	3708      	adds	r7, #8
  8001518:	46bd      	mov	sp, r7
@@ -2056,21 +2332,27 @@ Disassembly of section .text:
  800151c:	200001ec 	.word	0x200001ec
 
 08001520 <_write>:
+
+int _write(int file, char *ptr, int len) {
  8001520:	b580      	push	{r7, lr}
  8001522:	b086      	sub	sp, #24
  8001524:	af00      	add	r7, sp, #0
  8001526:	60f8      	str	r0, [r7, #12]
  8001528:	60b9      	str	r1, [r7, #8]
  800152a:	607a      	str	r2, [r7, #4]
+	int DataIdx;
+	for (DataIdx = 0; DataIdx < len; DataIdx++) {
  800152c:	2300      	movs	r3, #0
  800152e:	617b      	str	r3, [r7, #20]
  8001530:	e009      	b.n	8001546 <_write+0x26>
+		__io_putchar(*ptr++);
  8001532:	68bb      	ldr	r3, [r7, #8]
  8001534:	1c5a      	adds	r2, r3, #1
  8001536:	60ba      	str	r2, [r7, #8]
  8001538:	781b      	ldrb	r3, [r3, #0]
  800153a:	4618      	mov	r0, r3
  800153c:	f7ff ffde 	bl	80014fc <__io_putchar>
+	for (DataIdx = 0; DataIdx < len; DataIdx++) {
  8001540:	697b      	ldr	r3, [r7, #20]
  8001542:	3301      	adds	r3, #1
  8001544:	617b      	str	r3, [r7, #20]
@@ -2078,19 +2360,26 @@ Disassembly of section .text:
  8001548:	687b      	ldr	r3, [r7, #4]
  800154a:	429a      	cmp	r2, r3
  800154c:	dbf1      	blt.n	8001532 <_write+0x12>
+	}
+	return len;
  800154e:	687b      	ldr	r3, [r7, #4]
+}
  8001550:	4618      	mov	r0, r3
  8001552:	3718      	adds	r7, #24
  8001554:	46bd      	mov	sp, r7
  8001556:	bd80      	pop	{r7, pc}
 
 08001558 <HAL_I2C_ListenCpltCallback>:
+
+extern void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *hi2c) {
  8001558:	b580      	push	{r7, lr}
  800155a:	b082      	sub	sp, #8
  800155c:	af00      	add	r7, sp, #0
  800155e:	6078      	str	r0, [r7, #4]
+	HAL_I2C_EnableListen_IT(hi2c);
  8001560:	6878      	ldr	r0, [r7, #4]
  8001562:	f002 f9f6 	bl	8003952 <HAL_I2C_EnableListen_IT>
+}
  8001566:	bf00      	nop
  8001568:	3708      	adds	r7, #8
  800156a:	46bd      	mov	sp, r7
@@ -2098,6 +2387,8 @@ Disassembly of section .text:
 	...
 
 08001570 <HAL_I2C_AddrCallback>:
+
+extern void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode) {
  8001570:	b580      	push	{r7, lr}
  8001572:	b082      	sub	sp, #8
  8001574:	af00      	add	r7, sp, #0
@@ -2106,14 +2397,17 @@ Disassembly of section .text:
  800157a:	70fb      	strb	r3, [r7, #3]
  800157c:	4613      	mov	r3, r2
  800157e:	803b      	strh	r3, [r7, #0]
+	if (hi2c->Instance == I2C1) {
  8001580:	687b      	ldr	r3, [r7, #4]
  8001582:	681b      	ldr	r3, [r3, #0]
  8001584:	4a10      	ldr	r2, [pc, #64]	; (80015c8 <HAL_I2C_AddrCallback+0x58>)
  8001586:	4293      	cmp	r3, r2
  8001588:	d119      	bne.n	80015be <HAL_I2C_AddrCallback+0x4e>
+		if (TransferDirection == I2C_DIRECTION_TRANSMIT) { // if the master wants to transmit the data
  800158a:	78fb      	ldrb	r3, [r7, #3]
  800158c:	2b01      	cmp	r3, #1
  800158e:	d10f      	bne.n	80015b0 <HAL_I2C_AddrCallback+0x40>
+			if (HAL_I2C_Slave_Sequential_Receive_IT(&hi2c1, rxData+rxCount, 1, I2C_FIRST_FRAME) != HAL_OK) {
  8001590:	4b0e      	ldr	r3, [pc, #56]	; (80015cc <HAL_I2C_AddrCallback+0x5c>)
  8001592:	681b      	ldr	r3, [r3, #0]
  8001594:	4a0e      	ldr	r2, [pc, #56]	; (80015d0 <HAL_I2C_AddrCallback+0x60>)
@@ -2125,16 +2419,26 @@ Disassembly of section .text:
  80015a2:	4603      	mov	r3, r0
  80015a4:	2b00      	cmp	r3, #0
  80015a6:	d00a      	beq.n	80015be <HAL_I2C_AddrCallback+0x4e>
+				printf("Error: Could not read i2c values\r\n");
  80015a8:	480b      	ldr	r0, [pc, #44]	; (80015d8 <HAL_I2C_AddrCallback+0x68>)
  80015aa:	f006 f9bf 	bl	800792c <puts>
+			if (i2cState == 2) {
+				i2cState = 3;
+			}
+		}
+	}
+}
  80015ae:	e006      	b.n	80015be <HAL_I2C_AddrCallback+0x4e>
+			if (i2cState == 2) {
  80015b0:	4b0a      	ldr	r3, [pc, #40]	; (80015dc <HAL_I2C_AddrCallback+0x6c>)
  80015b2:	781b      	ldrb	r3, [r3, #0]
  80015b4:	2b02      	cmp	r3, #2
  80015b6:	d102      	bne.n	80015be <HAL_I2C_AddrCallback+0x4e>
+				i2cState = 3;
  80015b8:	4b08      	ldr	r3, [pc, #32]	; (80015dc <HAL_I2C_AddrCallback+0x6c>)
  80015ba:	2203      	movs	r2, #3
  80015bc:	701a      	strb	r2, [r3, #0]
+}
  80015be:	bf00      	nop
  80015c0:	3708      	adds	r7, #8
  80015c2:	46bd      	mov	sp, r7
@@ -2148,19 +2452,24 @@ Disassembly of section .text:
  80015dc:	2000016c 	.word	0x2000016c
 
 080015e0 <HAL_I2C_SlaveRxCpltCallback>:
+
+void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
  80015e0:	b580      	push	{r7, lr}
  80015e2:	b082      	sub	sp, #8
  80015e4:	af00      	add	r7, sp, #0
  80015e6:	6078      	str	r0, [r7, #4]
+	rxCount++;
  80015e8:	4b17      	ldr	r3, [pc, #92]	; (8001648 <HAL_I2C_SlaveRxCpltCallback+0x68>)
  80015ea:	681b      	ldr	r3, [r3, #0]
  80015ec:	3301      	adds	r3, #1
  80015ee:	4a16      	ldr	r2, [pc, #88]	; (8001648 <HAL_I2C_SlaveRxCpltCallback+0x68>)
  80015f0:	6013      	str	r3, [r2, #0]
+	if (rxCount == 1) {
  80015f2:	4b15      	ldr	r3, [pc, #84]	; (8001648 <HAL_I2C_SlaveRxCpltCallback+0x68>)
  80015f4:	681b      	ldr	r3, [r3, #0]
  80015f6:	2b01      	cmp	r3, #1
  80015f8:	d118      	bne.n	800162c <HAL_I2C_SlaveRxCpltCallback+0x4c>
+		if(isOutputPin(rxData[0])) { // pins that need additional value
  80015fa:	4b14      	ldr	r3, [pc, #80]	; (800164c <HAL_I2C_SlaveRxCpltCallback+0x6c>)
  80015fc:	781b      	ldrb	r3, [r3, #0]
  80015fe:	4618      	mov	r0, r3
@@ -2168,6 +2477,7 @@ Disassembly of section .text:
  8001604:	4603      	mov	r3, r0
  8001606:	2b00      	cmp	r3, #0
  8001608:	d009      	beq.n	800161e <HAL_I2C_SlaveRxCpltCallback+0x3e>
+			HAL_I2C_Slave_Sequential_Receive_IT(hi2c, rxData+rxCount, 1, I2C_LAST_FRAME);
  800160a:	4b0f      	ldr	r3, [pc, #60]	; (8001648 <HAL_I2C_SlaveRxCpltCallback+0x68>)
  800160c:	681b      	ldr	r3, [r3, #0]
  800160e:	4a0f      	ldr	r2, [pc, #60]	; (800164c <HAL_I2C_SlaveRxCpltCallback+0x6c>)
@@ -2176,24 +2486,37 @@ Disassembly of section .text:
  8001614:	2201      	movs	r2, #1
  8001616:	6878      	ldr	r0, [r7, #4]
  8001618:	f002 f929 	bl	800386e <HAL_I2C_Slave_Seq_Receive_IT>
+		}
+	} else if (rxCount == 2) {
+		rxCount = 0;
+		i2cState = 1;
+	}
+}
  800161c:	e010      	b.n	8001640 <HAL_I2C_SlaveRxCpltCallback+0x60>
+			i2cState = 2;
  800161e:	4b0c      	ldr	r3, [pc, #48]	; (8001650 <HAL_I2C_SlaveRxCpltCallback+0x70>)
  8001620:	2202      	movs	r2, #2
  8001622:	701a      	strb	r2, [r3, #0]
+			rxCount = 0;
  8001624:	4b08      	ldr	r3, [pc, #32]	; (8001648 <HAL_I2C_SlaveRxCpltCallback+0x68>)
  8001626:	2200      	movs	r2, #0
  8001628:	601a      	str	r2, [r3, #0]
+}
  800162a:	e009      	b.n	8001640 <HAL_I2C_SlaveRxCpltCallback+0x60>
+	} else if (rxCount == 2) {
  800162c:	4b06      	ldr	r3, [pc, #24]	; (8001648 <HAL_I2C_SlaveRxCpltCallback+0x68>)
  800162e:	681b      	ldr	r3, [r3, #0]
  8001630:	2b02      	cmp	r3, #2
  8001632:	d105      	bne.n	8001640 <HAL_I2C_SlaveRxCpltCallback+0x60>
+		rxCount = 0;
  8001634:	4b04      	ldr	r3, [pc, #16]	; (8001648 <HAL_I2C_SlaveRxCpltCallback+0x68>)
  8001636:	2200      	movs	r2, #0
  8001638:	601a      	str	r2, [r3, #0]
+		i2cState = 1;
  800163a:	4b05      	ldr	r3, [pc, #20]	; (8001650 <HAL_I2C_SlaveRxCpltCallback+0x70>)
  800163c:	2201      	movs	r2, #1
  800163e:	701a      	strb	r2, [r3, #0]
+}
  8001640:	bf00      	nop
  8001642:	3708      	adds	r7, #8
  8001644:	46bd      	mov	sp, r7
@@ -2203,6 +2526,8 @@ Disassembly of section .text:
  8001650:	2000016c 	.word	0x2000016c
 
 08001654 <HAL_I2C_SlaveTxCpltCallback>:
+
+void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c) {}
  8001654:	b480      	push	{r7}
  8001656:	b083      	sub	sp, #12
  8001658:	af00      	add	r7, sp, #0
@@ -2215,15 +2540,21 @@ Disassembly of section .text:
 	...
 
 08001668 <HAL_I2C_ErrorCallback>:
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
  8001668:	b580      	push	{r7, lr}
  800166a:	b082      	sub	sp, #8
  800166c:	af00      	add	r7, sp, #0
  800166e:	6078      	str	r0, [r7, #4]
+	HAL_I2C_DeInit(&hi2c1); // When master is reset we need to reinit i2c
  8001670:	4805      	ldr	r0, [pc, #20]	; (8001688 <HAL_I2C_ErrorCallback+0x20>)
  8001672:	f002 f847 	bl	8003704 <HAL_I2C_DeInit>
+	MX_I2C1_Init();
  8001676:	f7ff faa9 	bl	8000bcc <MX_I2C1_Init>
+	HAL_I2C_EnableListen_IT(hi2c);
  800167a:	6878      	ldr	r0, [r7, #4]
  800167c:	f002 f969 	bl	8003952 <HAL_I2C_EnableListen_IT>
+}
  8001680:	bf00      	nop
  8001682:	3708      	adds	r7, #8
  8001684:	46bd      	mov	sp, r7
@@ -2231,18 +2562,23 @@ Disassembly of section .text:
  8001688:	200000fc 	.word	0x200000fc
 
 0800168c <HAL_ADC_ConvCpltCallback>:
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
  800168c:	b480      	push	{r7}
  800168e:	b083      	sub	sp, #12
  8001690:	af00      	add	r7, sp, #0
  8001692:	6078      	str	r0, [r7, #4]
+	adcTempValue = adcDmaValue[0];
  8001694:	4b06      	ldr	r3, [pc, #24]	; (80016b0 <HAL_ADC_ConvCpltCallback+0x24>)
  8001696:	681b      	ldr	r3, [r3, #0]
  8001698:	4a06      	ldr	r2, [pc, #24]	; (80016b4 <HAL_ADC_ConvCpltCallback+0x28>)
  800169a:	6013      	str	r3, [r2, #0]
+	adcVRefValue = adcDmaValue[1];
  800169c:	4b04      	ldr	r3, [pc, #16]	; (80016b0 <HAL_ADC_ConvCpltCallback+0x24>)
  800169e:	685b      	ldr	r3, [r3, #4]
  80016a0:	4a05      	ldr	r2, [pc, #20]	; (80016b8 <HAL_ADC_ConvCpltCallback+0x2c>)
  80016a2:	6013      	str	r3, [r2, #0]
+}
  80016a4:	bf00      	nop
  80016a6:	370c      	adds	r7, #12
  80016a8:	46bd      	mov	sp, r7
@@ -2254,17 +2590,23 @@ Disassembly of section .text:
  80016b8:	20000168 	.word	0x20000168
 
 080016bc <HAL_TIM_IC_CaptureCallback>:
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
+{
  80016bc:	b480      	push	{r7}
  80016be:	b083      	sub	sp, #12
  80016c0:	af00      	add	r7, sp, #0
  80016c2:	6078      	str	r0, [r7, #4]
+	timerCapturedCounter = TIM2->CCR2;
  80016c4:	f04f 4380 	mov.w	r3, #1073741824	; 0x40000000
  80016c8:	6b9b      	ldr	r3, [r3, #56]	; 0x38
  80016ca:	4a05      	ldr	r2, [pc, #20]	; (80016e0 <HAL_TIM_IC_CaptureCallback+0x24>)
  80016cc:	6013      	str	r3, [r2, #0]
+    timerOverloadedCount = 0;
  80016ce:	4b05      	ldr	r3, [pc, #20]	; (80016e4 <HAL_TIM_IC_CaptureCallback+0x28>)
  80016d0:	2200      	movs	r2, #0
  80016d2:	701a      	strb	r2, [r3, #0]
+}
  80016d4:	bf00      	nop
  80016d6:	370c      	adds	r7, #12
  80016d8:	46bd      	mov	sp, r7
@@ -2275,16 +2617,21 @@ Disassembly of section .text:
  80016e4:	2000016d 	.word	0x2000016d
 
 080016e8 <HAL_TIM_PeriodElapsedCallback>:
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+{
  80016e8:	b480      	push	{r7}
  80016ea:	b083      	sub	sp, #12
  80016ec:	af00      	add	r7, sp, #0
  80016ee:	6078      	str	r0, [r7, #4]
+	timerOverloadedCount++;
  80016f0:	4b05      	ldr	r3, [pc, #20]	; (8001708 <HAL_TIM_PeriodElapsedCallback+0x20>)
  80016f2:	781b      	ldrb	r3, [r3, #0]
  80016f4:	3301      	adds	r3, #1
  80016f6:	b2da      	uxtb	r2, r3
  80016f8:	4b03      	ldr	r3, [pc, #12]	; (8001708 <HAL_TIM_PeriodElapsedCallback+0x20>)
  80016fa:	701a      	strb	r2, [r3, #0]
+}
  80016fc:	bf00      	nop
  80016fe:	370c      	adds	r7, #12
  8001700:	46bd      	mov	sp, r7
@@ -2294,12 +2641,30 @@ Disassembly of section .text:
  8001708:	2000016d 	.word	0x2000016d
 
 0800170c <Error_Handler>:
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
  800170c:	b580      	push	{r7, lr}
  800170e:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN Error_Handler_Debug */
+	printf("FATAL ERROR!!!");
  8001710:	4802      	ldr	r0, [pc, #8]	; (800171c <Error_Handler+0x10>)
  8001712:	f006 f8a5 	bl	8007860 <iprintf>
+  \details Disables IRQ interrupts by setting the I-bit in the CPSR.
+           Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __disable_irq(void)
+{
+  __ASM volatile ("cpsid i" : : : "memory");
  8001716:	b672      	cpsid	i
+}
  8001718:	bf00      	nop
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
  800171a:	e7fe      	b.n	800171a <Error_Handler+0xe>
  800171c:	080086e4 	.word	0x080086e4
 
