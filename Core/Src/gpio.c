@@ -58,16 +58,16 @@ void MX_GPIO_Init(void)
                           |PIN5_Pin|PIN6_Pin|PIN7_Pin|PIN8_Pin
                           |PIN10_Pin|PIN9_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin PAPin PAPin
-                           PAPin PAPin PAPin PAPin
-                           PAPin PAPin */
+  /*Configure GPIO pins : PIN1_Pin PIN2_Pin PIN3_Pin PIN4_Pin
+                           PIN5_Pin PIN6_Pin PIN7_Pin PIN8_Pin
+                           PIN10_Pin PIN9_Pin */
   GPIO_InitStruct.Pin = PIN1_Pin|PIN2_Pin|PIN3_Pin|PIN4_Pin
                           |PIN5_Pin|PIN6_Pin|PIN7_Pin|PIN8_Pin
                           |PIN10_Pin|PIN9_Pin;
@@ -76,10 +76,10 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin PBPin
-                           PBPin PBPin PBPin PBPin
-                           PBPin PBPin PBPin PBPin
-                           PBPin */
+  /*Configure GPIO pins : PIN20_Pin PIN22_Pin PIN21_Pin PIN19_Pin
+                           PIN18_Pin PIN23_Pin PIN24_Pin PIN25_Pin
+                           PIN11_Pin PIN15_Pin PIN14_Pin PIN17_Pin
+                           PIN16_Pin */
   GPIO_InitStruct.Pin = PIN20_Pin|PIN22_Pin|PIN21_Pin|PIN19_Pin
                           |PIN18_Pin|PIN23_Pin|PIN24_Pin|PIN25_Pin
                           |PIN11_Pin|PIN15_Pin|PIN14_Pin|PIN17_Pin
@@ -88,7 +88,7 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin */
+  /*Configure GPIO pins : PIN12_Pin PIN13_Pin */
   GPIO_InitStruct.Pin = PIN12_Pin|PIN13_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

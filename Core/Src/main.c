@@ -84,11 +84,11 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t isOutputPin(uint8_t pin) {
-	return (pin >= 1 && pin <= 10) || pin == 27 || pin == 28;
+	return (pin >= 1 && pin <= 10) || pin == 26 || pin == 27;
 }
 
 uint8_t isAnalogPin(uint8_t pin) {
-	return pin == 0 || pin == 26;
+	return pin == 28 || pin == 29;
 }
 
 uint8_t isInputPin(uint8_t pin) {
@@ -96,7 +96,7 @@ uint8_t isInputPin(uint8_t pin) {
 }
 
 #define DIMMER_PINS_RESET (uint32_t)((PIN1_Pin | PIN2_Pin | PIN3_Pin | PIN4_Pin | PIN5_Pin | PIN6_Pin | PIN7_Pin | PIN8_Pin | PIN9_Pin | PIN10_Pin) << 16u)
-#define DIMMER_RESET_TRESHHOLD 9900 // milliseconds
+#define DIMMER_RESET_TRESHHOLD 9800 // milliseconds
 #define DEBUG 0
 
 #define V25 1.57 // from datasheet fo CH32. for STM32 it is 1.43
@@ -112,10 +112,10 @@ int getVoltage(uint32_t variable) {
 }
 
 uint8_t readAnalogValue(uint8_t pin) {
-	if (pin == 0) {
+	if (pin == 28) {
 		return (uint8_t)getTemp(adcTempValue);
 	}
-	if (pin == 26) {
+	if (pin == 29) {
 		return (uint8_t)getVoltage(adcVRefValue);
 	}
 }
@@ -184,9 +184,9 @@ void setOuptutValue(uint8_t pin, uint8_t value) {
 	} else if (pin == 10) {
 		dimmerValue[9] = (100 - value) * 100;
 		//HAL_GPIO_WritePin(PIN10_GPIO_Port, PIN10_Pin, value == 100 ? GPIO_PIN_SET : GPIO_PIN_RESET);
-	} else if (pin == 27) {
+	} else if (pin == 26) {
 		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, value == 1 ? GPIO_PIN_RESET : GPIO_PIN_SET);
-	} else if (pin == 28) {
+	} else if (pin == 27 && value != 0) {
 		temperatureThreshold = value;
 	}
 	error = 0;
@@ -201,6 +201,7 @@ void setOuptutValue(uint8_t pin, uint8_t value) {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -466,8 +467,7 @@ void Error_Handler(void)
 	}
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
