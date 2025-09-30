@@ -40,9 +40,12 @@
 /* USER CODE BEGIN PD */
 
 #define READ_ANALOG_INPUT_VALUES_CMD 0 // this cmd will be combined with pin number. Pins 0-15 will be analog in
-#define READ_DIGITAL_INPUT_VALUES_CMD 16
-#define WRITE_DIGITAL_OUTPUT_VALUES_CMD 17
-#define WRITE_ANALOG_OUTPUT_VALUES_CMD 18
+#define WRITE_ANALOG_OUTPUT_VALUES_CMD 16 // 16-31 will be analog write pin numbers
+#define READ_DIGITAL_INPUT_VALUE_1_CMD 32
+#define READ_DIGITAL_INPUT_VALUE_2_CMD 33
+#define WRITE_DIGITAL_OUTPUT_VALUE_1_CMD 34
+#define WRITE_DIGITAL_OUTPUT_VALUE_2_CMD 35
+#define ACK_VALUE 130 // Like a password
 
 /* USER CODE END PD */
 
@@ -54,15 +57,18 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t cmdData[1];
-uint8_t rxData[2];
-uint8_t txData[1];
-uint32_t rxCount;
+
+uint8_t  rx_buf[2];
+uint8_t  tx_buf[1];
+
+volatile uint8_t input_digital_values[2] = {0x00};
+volatile uint8_t output_digital_values[2] = {0x00};
+volatile uint8_t input_analog_values[16] = {0x00};
+volatile uint8_t output_analog_values[16] = {0x00};
+
 uint32_t adcDmaValue[2];
 uint32_t adcTempValue;
 uint32_t adcVRefValue;
-
-uint8_t i2cState;
 
 uint32_t previousTick;
 uint8_t timerOverloadedCount;
@@ -89,21 +95,11 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t isOutputPin(uint8_t pin) {
-	return (pin >= 1 && pin <= 10) || pin == 26 || pin == 27;
-}
 
-uint8_t isAnalogPin(uint8_t pin) {
-	return pin == 28 || pin == 29;
-}
-
-uint8_t isInputPin(uint8_t pin) {
-	return pin >= 11 && pin <= 25;
-}
 
 #define DIMMER_PINS_RESET (uint32_t)((PIN1_Pin | PIN2_Pin | PIN3_Pin | PIN4_Pin | PIN5_Pin | PIN6_Pin | PIN7_Pin | PIN8_Pin | PIN9_Pin | PIN10_Pin) << 16u)
 #define DIMMER_RESET_TRESHHOLD 9800 // milliseconds
-#define DEBUG 0
+#define DEBUG 1
 
 #define V25 1.57 // from datasheet fo CH32. for STM32 it is 1.43
 #define VSENSE 3.3/4096 // VSENSE value 0.0008056640625
@@ -176,7 +172,7 @@ int main(void)
 
 		uint32_t timerCurrentCounter = TIM2->CNT;
 		uint32_t delta = (timerCurrentCounter + 10000 * timerOverloadedCount) - timerCapturedCounter;
-		if (delta > DIMMER_RESET_TRESHHOLD || getTemp(adcTempValue) > temperatureThreshold) {
+		if (delta > DIMMER_RESET_TRESHHOLD || input_analog_values[1] >= temperatureThreshold) {
 			GPIOA->BSRR = DIMMER_PINS_RESET;
 		} else {
 			if (dimmerValue[0] < delta) {
@@ -211,9 +207,46 @@ int main(void)
 			}
 		}
 
+		for (uint8_t i = 0; i < 10; i++) {
+			dimmerValue[i] = (100 - 100 * output_analog_values[i]/255) * 100;
+		}
+		temperatureThreshold = output_analog_values[10];
+
+		if ((output_digital_values[0] & (1 << 0)) > 0) {
+			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+		} else {
+			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+		}
+
+		input_analog_values[0] = getVoltage(adcVRefValue);
+		input_analog_values[1] = getTemp(adcTempValue);
+        uint8_t input_digital_values_temp[2] = {0x00};
+
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN11_Pin) << 0;
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN12_GPIO_Port, PIN12_Pin) << 1;
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN13_GPIO_Port, PIN13_Pin) << 2;
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN14_GPIO_Port, PIN14_Pin) << 3;
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN15_GPIO_Port, PIN15_Pin) << 4;
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN16_GPIO_Port, PIN16_Pin) << 5;
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN17_GPIO_Port, PIN17_Pin) << 6;
+		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN18_GPIO_Port, PIN18_Pin) << 7;
+
+		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN19_GPIO_Port, PIN19_Pin) << 0;
+		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN20_GPIO_Port, PIN20_Pin) << 1;
+		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN21_GPIO_Port, PIN21_Pin) << 2;
+		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN22_GPIO_Port, PIN22_Pin) << 3;
+		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN23_GPIO_Port, PIN23_Pin) << 4;
+		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN24_GPIO_Port, PIN24_Pin) << 5;
+		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN25_GPIO_Port, PIN25_Pin) << 6;
+
+		input_digital_values[0] = input_digital_values_temp[0];
+		input_digital_values[1] = input_digital_values_temp[1];
+
 		#if DEBUG
 			if (previousTick + 1000 < currentTick) {
-				printf("ADC1:[%d], TEMP:[%d], VREF:[%d], V:[%d]\r\n", adcTempValue, getTemp(adcTempValue), adcVRefValue, getVoltage(adcVRefValue));
+				printf("ADC1:[%d], TEMP:[%d], VREF:[%d], V:[%d]\r\n", adcTempValue, input_analog_values[1], adcVRefValue, input_analog_values[0]);
+				printf("Input Value 1=[%d], 2=[%d]\r\n", input_digital_values[0], input_digital_values[1]);
+				printf("Output Analog Value 1=[%d], 2=[%d]\r\n", output_analog_values[0], output_analog_values[1]);
 				previousTick = currentTick;
 			}
 		#endif
@@ -291,123 +324,40 @@ extern void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *hi2c) {
 	HAL_I2C_EnableListen_IT(hi2c);
 }
 
+
 extern void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode) {
-
 	if (TransferDirection == I2C_DIRECTION_TRANSMIT) { // if the master wants to transmit the data
-		if (HAL_I2C_Slave_Sequential_Receive_IT(&hi2c1, cmdData, 1, I2C_NEXT_FRAME) != HAL_OK) {
-			printf("Error: Could not read i2c command\r\n");
-			return;
-		}
+		HAL_I2C_Slave_Sequential_Receive_IT(hi2c, rx_buf, 2, I2C_LAST_FRAME);
 	} else {
-		uint8_t cmd = cmdData[0];
-		if (cmd > 0 && cmd < 16) {
-			// Received command to return analog value
-			// Read 1 more byte
-		    uint8_t pin;
-			if (HAL_I2C_Slave_Sequential_Receive_IT(&hi2c1, &pin, 1, I2C_LAST_FRAME) != HAL_OK) {
-				printf("Error: Could not read i2c data\r\n");
-				return;
-			}
-			if (pin == 0) {
-				uint8_t value = getVoltage(adcVRefValue);
-				HAL_I2C_Slave_Seq_Transmit_IT(&hi2c1, &value, 1, I2C_LAST_FRAME);
-			} else if (pin == 0) {
-				uint8_t value = getTemp(adcTempValue);
-				HAL_I2C_Slave_Seq_Transmit_IT(&hi2c1, &value, 1, I2C_LAST_FRAME);
-			}
-		} else if (cmd == READ_DIGITAL_INPUT_VALUES_CMD) {
-			uint8_t values[2] = {0x00};
-
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN11_Pin) << 0;
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN12_Pin) << 1;
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN13_Pin) << 2;
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN14_Pin) << 3;
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN15_Pin) << 4;
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN16_Pin) << 5;
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN17_Pin) << 6;
-			values[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN18_Pin) << 7;
-
-			values[1] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN19_Pin) << 0;
-			values[1] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN20_Pin) << 1;
-			values[1] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN21_Pin) << 2;
-			values[1] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN22_Pin) << 3;
-			values[1] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN23_Pin) << 4;
-			values[1] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN24_Pin) << 5;
-			values[1] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN25_Pin) << 6;
-
-			HAL_I2C_Slave_Seq_Transmit_IT(&hi2c1, values, 2, I2C_LAST_FRAME);
-
-		} else if (cmd == WRITE_DIGITAL_OUTPUT_VALUES_CMD) {
-			uint8_t values[2];
-			if (HAL_I2C_Slave_Sequential_Receive_IT(&hi2c1, values, 2, I2C_LAST_FRAME) != HAL_OK) {
-				printf("Error: Could not read i2c values\r\n");
-				return;
-			}
-
-			if ((values[0] & (1 << 0)) > 0) {
-				HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-			} else {
-				HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-			}
-		} else if (cmd == WRITE_ANALOG_OUTPUT_VALUES_CMD) {
-
-			// Received command to set analog value
-			// Read 2 more bytes
-			uint8_t data[2];
-			if (HAL_I2C_Slave_Sequential_Receive_IT(&hi2c1, data, 2, I2C_LAST_FRAME) != HAL_OK) {
-				printf("Error: Could not read i2c data\r\n");
-				return;
-			}
-
-			if (data[0] == 0) {
-				dimmerValue[0] = data[1]/255 * 100;
-			} else if (data[0] == 1) {
-				dimmerValue[1] = data[1]/255 * 100;
-			} else if (data[0] == 2) {
-				dimmerValue[2] = data[1]/255 * 100;
-			} else if (data[0] == 3) {
-				dimmerValue[3] = data[1]/255 * 100;
-			} else if (data[0] == 4) {
-				dimmerValue[4] = data[1]/255 * 100;
-			} else if (data[0] == 5) {
-				dimmerValue[5] = data[1]/255 * 100;
-			} else if (data[0] == 6) {
-				dimmerValue[6] = data[1]/255 * 100;
-			} else if (data[0] == 7) {
-				dimmerValue[7] = data[1]/255 * 100;
-			} else if (data[0] == 8) {
-				dimmerValue[8] = data[1]/255 * 100;
-			} else if (data[0] == 9) {
-				dimmerValue[9] = data[1]/255 * 100;
-			} else if (data[0] == 10) {
-				dimmerValue[10] = data[1]/255 * 100;
-			} else {
-				temperatureThreshold = data[1];
-			}
-
-		} else {
-			printf("Error: Unknown cmd: %d\r\n", cmd);
+		if (rx_buf[0] == WRITE_DIGITAL_OUTPUT_VALUE_1_CMD) {
+			output_digital_values[0] = rx_buf[1];
+			tx_buf[0] = ACK_VALUE;
+		} else if (rx_buf[0] == WRITE_DIGITAL_OUTPUT_VALUE_2_CMD){
+			output_digital_values[1] = rx_buf[1];
+			tx_buf[0] = ACK_VALUE;
+		} else if (rx_buf[0] >= WRITE_ANALOG_OUTPUT_VALUES_CMD && rx_buf[0] <= WRITE_ANALOG_OUTPUT_VALUES_CMD + 15) {
+			output_analog_values[rx_buf[0] - WRITE_ANALOG_OUTPUT_VALUES_CMD] = rx_buf[1];
+			tx_buf[0] = output_analog_values[rx_buf[0] - WRITE_ANALOG_OUTPUT_VALUES_CMD];
+		} else if (rx_buf[0] >= READ_ANALOG_INPUT_VALUES_CMD && rx_buf[0] <= READ_ANALOG_INPUT_VALUES_CMD + 15) {
+			tx_buf[0] = input_analog_values[rx_buf[0]];
+		} else if (rx_buf[0] == READ_DIGITAL_INPUT_VALUE_1_CMD) {
+			tx_buf[0] = input_digital_values[0];
+		} else if (rx_buf[0] == READ_DIGITAL_INPUT_VALUE_2_CMD) {
+			tx_buf[0] = input_digital_values[1];
 		}
+		HAL_I2C_Slave_Seq_Transmit_IT(hi2c, tx_buf, 1, I2C_LAST_FRAME);
 	}
 
 }
+
 
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
-	rxCount++;
-	if (rxCount == 1) {
-		if(isOutputPin(rxData[0])) { // pins that need additional value
-			HAL_I2C_Slave_Sequential_Receive_IT(hi2c, rxData+rxCount, 1, I2C_LAST_FRAME);
-		} else {
-			i2cState = 2;
-			rxCount = 0;
-		}
-	} else if (rxCount == 2) {
-		rxCount = 0;
-		i2cState = 1;
-	}
+
 }
 
-void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c) {}
+void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c) {
+
+}
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
 	HAL_I2C_DeInit(&hi2c1); // When master is reset we need to reinit i2c
