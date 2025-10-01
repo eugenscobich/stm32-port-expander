@@ -99,7 +99,8 @@ void SystemClock_Config(void);
 
 #define DIMMER_PINS_RESET (uint32_t)((PIN1_Pin | PIN2_Pin | PIN3_Pin | PIN4_Pin | PIN5_Pin | PIN6_Pin | PIN7_Pin | PIN8_Pin | PIN9_Pin | PIN10_Pin) << 16u)
 #define DIMMER_RESET_TRESHHOLD 9800 // milliseconds
-#define DEBUG 1
+#define DIMMER_MIN_TRESHHOLD 100 // milliseconds
+#define DEBUG 0
 
 #define V25 1.57 // from datasheet fo CH32. for STM32 it is 1.43
 #define VSENSE 3.3/4096 // VSENSE value 0.0008056640625
@@ -166,13 +167,75 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		#if DEBUG
-			uint32_t currentTick = HAL_GetTick();
-		#endif
-
 		uint32_t timerCurrentCounter = TIM2->CNT;
 		uint32_t delta = (timerCurrentCounter + 10000 * timerOverloadedCount) - timerCapturedCounter;
-		if (delta > DIMMER_RESET_TRESHHOLD || input_analog_values[1] >= temperatureThreshold) {
+		if (delta < DIMMER_MIN_TRESHHOLD) {
+			for (uint8_t i = 0; i < 10; i++) {
+				dimmerValue[i] = (100 - 100 * output_analog_values[i]/255) * 100;
+			}
+			temperatureThreshold = output_analog_values[10];
+
+			if ((output_digital_values[0] & (1 << 0)) > 0) {
+				HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+			} else {
+				HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+			}
+
+			input_analog_values[0] = getVoltage(adcVRefValue);
+			input_analog_values[1] = getTemp(adcTempValue);
+			uint8_t input_digital_values_temp[2] = {0x00};
+
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN11_Pin) << 0;
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN12_GPIO_Port, PIN12_Pin) << 1;
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN13_GPIO_Port, PIN13_Pin) << 2;
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN14_GPIO_Port, PIN14_Pin) << 3;
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN15_GPIO_Port, PIN15_Pin) << 4;
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN16_GPIO_Port, PIN16_Pin) << 5;
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN17_GPIO_Port, PIN17_Pin) << 6;
+			input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN18_GPIO_Port, PIN18_Pin) << 7;
+
+			input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN19_GPIO_Port, PIN19_Pin) << 0;
+			input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN20_GPIO_Port, PIN20_Pin) << 1;
+			input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN21_GPIO_Port, PIN21_Pin) << 2;
+			input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN22_GPIO_Port, PIN22_Pin) << 3;
+			input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN23_GPIO_Port, PIN23_Pin) << 4;
+			input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN24_GPIO_Port, PIN24_Pin) << 5;
+			input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN25_GPIO_Port, PIN25_Pin) << 6;
+
+			input_digital_values[0] = input_digital_values_temp[0];
+			input_digital_values[1] = input_digital_values_temp[1];
+		} else if (delta > DIMMER_RESET_TRESHHOLD) {
+			if (dimmerValue[0] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN1_GPIO_Port, PIN1_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[1] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN2_GPIO_Port, PIN2_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[2] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN3_GPIO_Port, PIN3_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[3] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN4_GPIO_Port, PIN4_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[4] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN5_GPIO_Port, PIN5_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[5] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN6_GPIO_Port, PIN6_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[6] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN7_GPIO_Port, PIN7_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[7] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN8_GPIO_Port, PIN8_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[8] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN9_GPIO_Port, PIN9_Pin, GPIO_PIN_RESET);
+			}
+			if (dimmerValue[9] > DIMMER_MIN_TRESHHOLD) {
+				HAL_GPIO_WritePin(PIN10_GPIO_Port, PIN10_Pin, GPIO_PIN_RESET);
+			}
+		} else if (input_analog_values[1] >= temperatureThreshold) {
 			GPIOA->BSRR = DIMMER_PINS_RESET;
 		} else {
 			if (dimmerValue[0] < delta) {
@@ -207,42 +270,8 @@ int main(void)
 			}
 		}
 
-		for (uint8_t i = 0; i < 10; i++) {
-			dimmerValue[i] = (100 - 100 * output_analog_values[i]/255) * 100;
-		}
-		temperatureThreshold = output_analog_values[10];
-
-		if ((output_digital_values[0] & (1 << 0)) > 0) {
-			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-		} else {
-			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-		}
-
-		input_analog_values[0] = getVoltage(adcVRefValue);
-		input_analog_values[1] = getTemp(adcTempValue);
-        uint8_t input_digital_values_temp[2] = {0x00};
-
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN11_GPIO_Port, PIN11_Pin) << 0;
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN12_GPIO_Port, PIN12_Pin) << 1;
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN13_GPIO_Port, PIN13_Pin) << 2;
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN14_GPIO_Port, PIN14_Pin) << 3;
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN15_GPIO_Port, PIN15_Pin) << 4;
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN16_GPIO_Port, PIN16_Pin) << 5;
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN17_GPIO_Port, PIN17_Pin) << 6;
-		input_digital_values_temp[0] |= HAL_GPIO_ReadPin(PIN18_GPIO_Port, PIN18_Pin) << 7;
-
-		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN19_GPIO_Port, PIN19_Pin) << 0;
-		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN20_GPIO_Port, PIN20_Pin) << 1;
-		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN21_GPIO_Port, PIN21_Pin) << 2;
-		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN22_GPIO_Port, PIN22_Pin) << 3;
-		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN23_GPIO_Port, PIN23_Pin) << 4;
-		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN24_GPIO_Port, PIN24_Pin) << 5;
-		input_digital_values_temp[1] |= HAL_GPIO_ReadPin(PIN25_GPIO_Port, PIN25_Pin) << 6;
-
-		input_digital_values[0] = input_digital_values_temp[0];
-		input_digital_values[1] = input_digital_values_temp[1];
-
 		#if DEBUG
+		    uint32_t currentTick = HAL_GetTick();
 			if (previousTick + 1000 < currentTick) {
 				printf("ADC1:[%d], TEMP:[%d], VREF:[%d], V:[%d]\r\n", adcTempValue, input_analog_values[1], adcVRefValue, input_analog_values[0]);
 				printf("Input Value 1=[%d], 2=[%d]\r\n", input_digital_values[0], input_digital_values[1]);
@@ -337,6 +366,7 @@ extern void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirect
 			tx_buf[0] = ACK_VALUE;
 		} else if (rx_buf[0] >= WRITE_ANALOG_OUTPUT_VALUES_CMD && rx_buf[0] <= WRITE_ANALOG_OUTPUT_VALUES_CMD + 15) {
 			output_analog_values[rx_buf[0] - WRITE_ANALOG_OUTPUT_VALUES_CMD] = rx_buf[1];
+			//dimmerValue[i] = (100 - 100 * output_analog_values[i]/255) * 100;
 			tx_buf[0] = output_analog_values[rx_buf[0] - WRITE_ANALOG_OUTPUT_VALUES_CMD];
 		} else if (rx_buf[0] >= READ_ANALOG_INPUT_VALUES_CMD && rx_buf[0] <= READ_ANALOG_INPUT_VALUES_CMD + 15) {
 			tx_buf[0] = input_analog_values[rx_buf[0]];
